@@ -6,7 +6,8 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["node", "vitest/globals"]
+    "lib": ["ES2022", "DOM"],
+    "types": ["node", "@cloudflare/workers-types", "vitest/globals"]
   },
   "include": ["src", "test"]
 }

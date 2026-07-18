@@ -7,7 +7,7 @@ describe("HTML extraction", () => {
       <h1>Heading</h1><p>${"Useful content. ".repeat(20)} <a href="/about">About</a></p>
       <table><tr><th>A</th></tr><tr><td>B</td></tr></table></article>`, "https://example.com/post");
     expect(result.title).toContain("Test");
-    expect(result.markdown).toContain("# Heading");
+    expect(result.markdown).toMatch(/^#+ Heading/m);
     expect(result.markdown).toContain("https://example.com/about");
     expect(result.markdown).toContain("| A |");
   });

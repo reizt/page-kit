@@ -1,0 +1,27 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "page-kit",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    {
+      "pattern": "page-kit.reiju.me",
+      "custom_domain": true
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "page-kit",
+      "database_id": "ad55e01b-84d2-4de4-bb17-6630b2e294d7",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "browser": {
+    "binding": "BROWSER"
+  },
+  "limits": {
+    "cpu_ms": 30000
+  }
+}

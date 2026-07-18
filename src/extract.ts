@@ -1,7 +1,6 @@
 import { Readability } from "@mozilla/readability";
-import { JSDOM } from "jsdom";
+import { DOMParser } from "linkedom";
 import TurndownService from "turndown";
-import { gfm } from "turndown-plugin-gfm";
 import { AppError } from "./errors.js";
 
 export interface ExtractedPage {
@@ -25,25 +24,48 @@ function absolutizeUrls(root: Element, baseUrl: string): void {
 
 export function extractPage(html: string, finalUrl: string): ExtractedPage {
   try {
-    const dom = new JSDOM(html, { url: finalUrl });
-    const document = dom.window.document;
-    document.querySelectorAll(REMOVED_ELEMENTS).forEach((node) => node.remove());
-    const article = new Readability(document.cloneNode(true) as Document).parse();
-    const fallbackTitle = document.title.trim();
+    const parsed = new DOMParser().parseFromString(html, "text/html");
+    const parsedTitle = parsed.querySelector("title")?.textContent?.trim() ?? "";
+    const bodyMatch = html.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+    const parsedBody = bodyMatch?.[1] ?? html
+      .replace(/<!doctype[^>]*>/gi, "")
+      .replace(/<head\b[^>]*>[\s\S]*?<\/head>/gi, "")
+      .replace(/<title\b[^>]*>[\s\S]*?<\/title>/gi, "")
+      .replace(/<\/?html\b[^>]*>/gi, "");
+    const document = new DOMParser().parseFromString(
+      `<!doctype html><html><head><title></title></head><body>${parsedBody}</body></html>`,
+      "text/html",
+    );
+    const titleElement = document.querySelector("title");
+    if (titleElement) titleElement.textContent = parsedTitle;
+    document.querySelectorAll(REMOVED_ELEMENTS).forEach((node: { remove(): void }) => node.remove());
+    const article = new Readability(document.cloneNode(true) as unknown as Document).parse();
+    const fallbackTitle = parsedTitle;
     const contentHtml = article?.content || document.body?.innerHTML || "";
-    const fragment = JSDOM.fragment(contentHtml);
-    const wrapper = document.createElement("div");
-    wrapper.append(fragment.cloneNode(true));
-    wrapper.querySelectorAll(REMOVED_ELEMENTS).forEach((node) => node.remove());
-    absolutizeUrls(wrapper, finalUrl);
+    const fragment = new DOMParser().parseFromString(`<div id="page-kit-content">${contentHtml}</div>`, "text/html");
+    const wrapper = fragment.querySelector("#page-kit-content");
+    if (!wrapper) throw new Error("Missing content root");
+    wrapper.querySelectorAll(REMOVED_ELEMENTS).forEach((node: { remove(): void }) => node.remove());
+    absolutizeUrls(wrapper as unknown as Element, finalUrl);
 
     const turndown = new TurndownService({
       codeBlockStyle: "fenced",
       headingStyle: "atx",
       bulletListMarker: "-",
     });
-    turndown.use(gfm);
-    const markdown = turndown.turndown(wrapper.innerHTML)
+    turndown.addRule("table", {
+      filter: "table",
+      replacement: (_content, node) => {
+        const rows = Array.from((node as HTMLElement).querySelectorAll("tr"));
+        const values = rows.map((row) => Array.from(row.querySelectorAll("th,td")).map((cell) =>
+          turndown.turndown(cell as unknown as HTMLElement).replace(/\|/g, "\\|").replace(/\s*\n\s*/g, " ").trim()
+        ));
+        if (!values[0]?.length) return "";
+        const line = (cells: string[]) => `| ${cells.join(" | ")} |`;
+        return `\n\n${line(values[0])}\n${line(values[0].map(() => "---"))}${values.slice(1).map((row) => `\n${line(row)}`).join("")}\n\n`;
+      },
+    });
+    const markdown = turndown.turndown(wrapper as unknown as HTMLElement)
       .replace(/\n{3,}/g, "\n\n")
       .trim();
     return {

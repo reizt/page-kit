@@ -1,36 +1,34 @@
 {
   "name": "page-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "packageManager": "bun@1.3.12",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/index.js",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:browser": "RUN_BROWSER_TESTS=1 vitest run test/browser.test.ts"
+    "test": "vitest run"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.9",
+    "@cloudflare/playwright": "^1.3.0",
     "@mozilla/readability": "^0.6.0",
-    "better-sqlite3": "^12.11.1",
+    "agents": "^0.17.4",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.29",
-    "jsdom": "^26.1.0",
-    "playwright": "^1.61.1",
+    "linkedom": "^0.18.13",
     "turndown": "^7.2.4",
-    "turndown-plugin-gfm": "^1.0.2"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/jsdom": "^21.1.7",
+    "@cloudflare/vitest-pool-workers": "^0.18.6",
+    "@cloudflare/workers-types": "^5.20260718.1",
     "@types/node": "^24.10.13",
     "@types/turndown": "^5.0.5",
-    "tsx": "^4.21.0",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "wrangler": "^4.112.0"
   },
   "engines": {
     "node": ">=22"

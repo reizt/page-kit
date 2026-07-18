@@ -2,7 +2,7 @@ import { CACHE_TTL_MS } from "./constants.js";
 import type { Cache } from "./cache.js";
 import { extractPage, needsRendering } from "./extract.js";
 import { fetchHtml, type HtmlResponse } from "./http.js";
-import { renderHtml } from "./browser.js";
+import { AppError } from "./errors.js";
 import { normalizeUrl } from "./url.js";
 
 export type RenderMode = "auto" | "never" | "always";
@@ -35,12 +35,14 @@ interface Dependencies {
 
 export function createFetchService(cache: Cache, dependencies: Dependencies = {}) {
   const httpFetch = dependencies.httpFetch ?? fetchHtml;
-  const render = dependencies.render ?? renderHtml;
+  const render = dependencies.render ?? (() => {
+    throw new AppError("RENDER_FAILED", "Browser rendering is not configured", 500);
+  });
   const now = dependencies.now ?? (() => new Date());
 
   return async (request: FetchRequest): Promise<FetchResult> => {
     const url = normalizeUrl(request.url);
-    const cached = request.force ? undefined : cache.getValid(url, now());
+    const cached = request.force ? undefined : await cache.getValid(url, now());
     if (cached) {
       return {
         url,
@@ -68,7 +70,7 @@ export function createFetchService(cache: Cache, dependencies: Dependencies = {}
     }
 
     const fetchedAt = now();
-    cache.set({
+    await cache.set({
       url,
       finalUrl: response.finalUrl,
       title: extracted.title,
