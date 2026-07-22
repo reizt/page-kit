@@ -6,21 +6,15 @@
 
 ```sh
 bun install
-cp .env.example .env
 bun run dev
 ```
 
-`.env`の`API_KEY`はREST APIとMCPのBearer認証に使う。Cloudflareへはsecretとして登録する。
-
-```sh
-bunx wrangler secret bulk .env
-```
+本番環境の認証は`page-kit.reiju.me`に設定したCloudflare Accessへ委譲する。Worker自体は認証を行わない。
 
 ## REST API
 
 ```sh
 curl -X POST https://page-kit.reiju.me/fetch \
-  -H "Authorization: Bearer $PAGE_KIT_API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{"url":"https://example.com","render":"auto"}'
 ```
@@ -38,17 +32,15 @@ curl -X POST https://page-kit.reiju.me/fetch \
 Streamable HTTP MCPを`/mcp`で提供し、`fetch_page` toolを公開する。
 
 ```sh
-export PAGE_KIT_API_KEY='...'
-codex mcp add page-kit \
-  --url https://page-kit.reiju.me/mcp \
-  --bearer-token-env-var PAGE_KIT_API_KEY
+codex mcp add page-kit --url https://page-kit.reiju.me/mcp
 ```
+
+Cloudflare AccessをBypassしない環境から接続する場合は、Access側で許可した認証方法をクライアントに設定する。
 
 ## デプロイ
 
 ```sh
 bunx wrangler d1 migrations apply page-kit --remote
-bunx wrangler secret bulk .env
 bun run deploy
 ```
 
@@ -57,6 +49,7 @@ bun run deploy
 - D1 database: `page-kit`
 - Browser Run binding: `BROWSER`
 - Custom Domain: `page-kit.reiju.me`
+- `workers.dev`とPreview URLは無効
 
 ## 検証
 
@@ -68,4 +61,4 @@ bun run build
 
 ## セキュリティ上の制約
 
-HTTP/HTTPSのみ許可し、localhost、プライベートIP、link-local、`.local`を拒否する。通常取得ではリダイレクトごと、Browser Runではnavigation requestごとに名前解決結果も検査する。DNS Rebindingへの完全な防御を保証するものではない。
+本番環境へのアクセス制御はCloudflare Accessで行う。HTTP/HTTPSのみ許可し、localhost、プライベートIP、link-local、`.local`を拒否する。通常取得ではリダイレクトごと、Browser Runではnavigation requestごとに名前解決結果も検査する。DNS Rebindingへの完全な防御を保証するものではない。

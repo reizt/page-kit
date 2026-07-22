@@ -9,23 +9,26 @@ const service = async (request: { url: string }) => ({
   metadata: { statusCode: 200, contentType: "text/html", rendered: false, cached: false, fetchedAt: new Date(0).toISOString() },
 });
 
-const env = { API_KEY: "test-key" } as Env;
+const env = {} as Env;
+
+describe("GET /", () => {
+  it("serves the Markdown conversion UI", async () => {
+    const response = await createApp(service).request("/", {}, env);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/html");
+    const html = await response.text();
+    expect(html).toContain("Markdownに変換");
+    expect(html).toContain("fetch('/fetch'");
+    expect(html).not.toContain("APIキー");
+    expect(html).not.toContain("authorization");
+  });
+});
 
 describe("POST /fetch", () => {
-  it("requires bearer authentication", async () => {
+  it("fetches without application-level authentication", async () => {
     const response = await createApp(service).request("/fetch", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ url: "https://example.com" }),
-    }, env);
-    expect(response.status).toBe(401);
-    expect(await response.json()).toMatchObject({ success: false, error: { code: "UNAUTHORIZED" } });
-  });
-
-  it("fetches with valid bearer authentication", async () => {
-    const response = await createApp(service).request("/fetch", {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: "Bearer test-key" },
       body: JSON.stringify({ url: "https://example.com" }),
     }, env);
     expect(response.status).toBe(200);
@@ -35,7 +38,7 @@ describe("POST /fetch", () => {
   it("rejects invalid input", async () => {
     const response = await createApp(service).request("/fetch", {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: "Bearer test-key" },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ url: 1 }),
     }, env);
     expect(response.status).toBe(400);
@@ -56,7 +59,6 @@ describe("POST /mcp", () => {
       headers: {
         "content-type": "application/json",
         accept: "application/json, text/event-stream",
-        authorization: "Bearer test-key",
       },
       body: JSON.stringify(body),
     }, env, executionContext);
