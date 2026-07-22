@@ -5,7 +5,8 @@ import { z } from "zod";
 import { renderHtml } from "./browser";
 import { createD1Cache } from "./cache";
 import { AppError } from "./errors";
-import { HOME_PAGE } from "./home";
+import HOME_PAGE from "./home.html";
+import { renderMarkdown } from "./markdown";
 import {
   createFetchService,
   type FetchRequest,
@@ -111,7 +112,10 @@ export function createApp(overrideService?: FetchService) {
     if (!isFetchRequest(body))
       throw new AppError("INVALID_REQUEST", "Request body is invalid", 400);
     const data = await (overrideService ?? serviceFromEnv(context.env))(body);
-    return context.json({ success: true as const, data });
+    return context.json({
+      success: true as const,
+      data: { ...data, previewHtml: renderMarkdown(data.markdown) },
+    });
   });
 
   app.all("/mcp", async (context) => {

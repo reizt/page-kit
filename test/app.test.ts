@@ -25,6 +25,8 @@ describe("GET /", () => {
     const html = await response.text();
     expect(html).toContain("Markdownに変換");
     expect(html).toContain("color-scheme: dark");
+    expect(html).toContain('role="tablist"');
+    expect(html).toContain("Preview");
     expect(html).toContain("fetch('/fetch'");
     expect(html).not.toContain("APIキー");
     expect(html).not.toContain("authorization");
@@ -45,7 +47,7 @@ describe("POST /fetch", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       success: true,
-      data: { title: "Test" },
+      data: { title: "Test", previewHtml: "<p>Body</p>\n" },
     });
   });
 
