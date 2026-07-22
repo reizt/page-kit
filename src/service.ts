@@ -1,9 +1,9 @@
-import { CACHE_TTL_MS } from "./constants.js";
-import type { Cache } from "./cache.js";
-import { extractPage, needsRendering } from "./extract.js";
-import { fetchHtml, type HtmlResponse } from "./http.js";
-import { AppError } from "./errors.js";
-import { normalizeUrl } from "./url.js";
+import type { Cache } from "./cache";
+import { CACHE_TTL_MS } from "./constants";
+import { AppError } from "./errors";
+import { extractPage, needsRendering } from "./extract";
+import { fetchHtml, type HtmlResponse } from "./http";
+import { normalizeUrl } from "./url";
 
 export type RenderMode = "auto" | "never" | "always";
 
@@ -33,11 +33,20 @@ interface Dependencies {
   now?: () => Date;
 }
 
-export function createFetchService(cache: Cache, dependencies: Dependencies = {}) {
+export function createFetchService(
+  cache: Cache,
+  dependencies: Dependencies = {},
+) {
   const httpFetch = dependencies.httpFetch ?? fetchHtml;
-  const render = dependencies.render ?? (() => {
-    throw new AppError("RENDER_FAILED", "Browser rendering is not configured", 500);
-  });
+  const render =
+    dependencies.render ??
+    (() => {
+      throw new AppError(
+        "RENDER_FAILED",
+        "Browser rendering is not configured",
+        500,
+      );
+    });
   const now = dependencies.now ?? (() => new Date());
 
   return async (request: FetchRequest): Promise<FetchResult> => {
@@ -63,7 +72,10 @@ export function createFetchService(cache: Cache, dependencies: Dependencies = {}
     let response = mode === "always" ? await render(url) : await httpFetch(url);
     let rendered = mode === "always";
     let extracted = extractPage(response.html, response.finalUrl);
-    if (mode === "auto" && needsRendering(response.html, extracted.textContent)) {
+    if (
+      mode === "auto" &&
+      needsRendering(response.html, extracted.textContent)
+    ) {
       response = await render(url);
       rendered = true;
       extracted = extractPage(response.html, response.finalUrl);

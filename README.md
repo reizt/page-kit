@@ -54,6 +54,7 @@ bun run deploy
 ## 検証
 
 ```sh
+bun run check
 bun run typecheck
 bun run test
 bun run build
