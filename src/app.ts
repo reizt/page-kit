@@ -122,10 +122,14 @@ export function createApp(overrideService?: FetchService) {
     const server = createMcpServer(
       overrideService ?? serviceFromEnv(context.env),
     );
-    return createMcpHandler(server, {
+    const handler = createMcpHandler(server, {
       route: "/mcp",
       enableJsonResponse: true,
-    })(context.req.raw, context.env, context.executionCtx as any);
+    });
+    const executionContext = context.executionCtx as unknown as Parameters<
+      typeof handler
+    >[2];
+    return handler(context.req.raw, context.env, executionContext);
   });
 
   app.notFound((context) =>

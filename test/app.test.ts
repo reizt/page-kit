@@ -1,3 +1,4 @@
+import type { ExecutionContext } from "hono";
 import { describe, expect, it } from "vitest";
 import { createApp, type Env } from "../src/app";
 
@@ -72,11 +73,11 @@ describe("POST /fetch", () => {
 describe("POST /mcp", () => {
   it("lists and invokes fetch_page", async () => {
     const app = createApp(service);
-    const executionContext = {
+    const executionContext: ExecutionContext = {
       waitUntil() {},
       passThroughOnException() {},
       props: {},
-    } as any;
+    };
     const request = async (body: object) =>
       app.request(
         "/mcp",
