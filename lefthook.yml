@@ -1,5 +1,6 @@
 pre-commit:
   jobs:
-    - name: biome
-      glob: "*.{js,ts,json,jsonc}"
-      run: bunx biome check --no-errors-on-unmatched {staged_files}
+    - name: lint
+      run: bun run lint
+    - name: typecheck
+      run: bun run typecheck

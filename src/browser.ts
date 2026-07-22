@@ -13,7 +13,7 @@ export async function renderHtml(
   const context = await browser.newContext({ userAgent: USER_AGENT });
   const page = await context.newPage();
   try {
-    await page.route("**/*", async (route: any) => {
+    await page.route("**/*", async (route) => {
       const request = route.request();
       if (["image", "media", "font"].includes(request.resourceType()))
         return route.abort();
