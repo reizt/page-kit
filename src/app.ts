@@ -5,10 +5,10 @@ import { z } from "zod";
 import { renderHtml } from "./browser.js";
 import { createD1Cache } from "./cache.js";
 import { AppError } from "./errors.js";
+import { HOME_PAGE } from "./home.js";
 import { createFetchService, type FetchRequest, type FetchResult } from "./service.js";
 
 export interface Env {
-  API_KEY: string;
   DB: D1Database;
   BROWSER: import("@cloudflare/playwright").BrowserWorker;
 }
@@ -76,16 +76,7 @@ function createMcpServer(service: FetchService): McpServer {
 export function createApp(overrideService?: FetchService) {
   const app = new Hono<{ Bindings: Env }>();
 
-  app.use("*", async (context, next) => {
-    if (!context.env.API_KEY) throw new AppError("FETCH_FAILED", "API key is not configured", 500);
-    if (context.req.header("authorization") !== `Bearer ${context.env.API_KEY}`) {
-      return context.json({
-        success: false as const,
-        error: { code: "UNAUTHORIZED", message: "Bearer authentication failed" },
-      }, 401);
-    }
-    await next();
-  });
+  app.get("/", (context) => context.html(HOME_PAGE));
 
   app.post("/fetch", async (context) => {
     let body: unknown;
